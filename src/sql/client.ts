@@ -56,7 +56,7 @@ const make = Effect.gen(function* () {
     Effect.gen(function* () {
       yield* sql`CREATE TABLE IF NOT EXISTS issues (
         id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         publishDate DATE,
         isPublished BOOLEAN NOT NULL DEFAULT 0,
         createdAt DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
