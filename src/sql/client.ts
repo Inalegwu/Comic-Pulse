@@ -2,7 +2,7 @@ import { SqlClient, type SqlError, SqlResolver } from "@effect/sql";
 import { LibsqlClient } from "@effect/sql-libsql";
 import { Context, Effect, Layer, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
-import { DBConfig } from "./config.ts";
+import { DatabaseConfig } from "./config.ts";
 
 type ISqlService = Readonly<{
   insert: (input: {
@@ -19,7 +19,7 @@ type ISqlService = Readonly<{
 
 const SqlLive = Layer.unwrapEffect(
   Effect.gen(function* () {
-    const config = yield* DBConfig;
+    const config = yield* DatabaseConfig;
 
     return LibsqlClient.layer({
       url: config.DATBASE_URL,

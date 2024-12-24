@@ -47,7 +47,7 @@ export const checkForComics = Effect.scoped(
             .split("\n")
             .map((v) => v.trim())
             .join("\n")
-            .match(regex)
+            .match(/[\w\s&]+ \#\d+/g)
             ?.map((v) => v.trim()),
         );
 
