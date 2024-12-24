@@ -15,6 +15,7 @@ type ISqlService = Readonly<{
     SqlError.ResultLengthMismatch | SqlError.SqlError | ParseError,
     never
   >;
+  createTable: () => Effect.Effect<void, SqlError.SqlError, never>;
 }>;
 
 const SqlLive = Layer.unwrapEffect(
@@ -51,7 +52,19 @@ const make = Effect.gen(function* () {
 
   const insert = InsertIssue.execute;
 
-  return { insert };
+  const createTable = () =>
+    Effect.gen(function* () {
+      yield* sql`CREATE TABLE IF NOT EXISTS issues (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        publishDate DATE,
+        isPublished BOOLEAN NOT NULL DEFAULT 0,
+        createdAt DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATE NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );`;
+    });
+
+  return { insert, createTable };
 });
 
 export class SqlService extends Context.Tag("sql-service")<

@@ -4,13 +4,15 @@ import { CheerioClient } from "../cheerio/client.ts";
 import { Store } from "../resources.ts";
 import { SqlService } from "../sql/client.ts";
 
-const regex = /[\w\s&]+ \#\d+/g;
+// const regex = /[\w\s&]+ \#\d+/g;
 
 export const checkForComics = Effect.scoped(
   Effect.gen(function* () {
     const cheerio = yield* CheerioClient;
     const kv = yield* Store;
     const sql = yield* SqlService;
+
+    yield* sql.createTable();
 
     const page = yield* cheerio.make(
       "https://comixnow.com/category/dc-weekly/",
