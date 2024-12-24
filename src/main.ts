@@ -12,7 +12,7 @@ import { notifyRelease } from "./handlers/notify-release.ts";
 // );
 Deno.cron(
   "Check for new comics",
-  "*/2 * * * *",
+  "*/1 * * * *",
   () => Effect.runPromise(checkForComics),
 );
 
