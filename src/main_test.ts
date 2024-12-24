@@ -1,6 +1,4 @@
-import { assertEquals } from "@std/assert";
-import { add } from "./main.ts";
+import { Effect } from "effect";
+import { checkForComics } from "./handlers/check-for-comics.ts";
 
-Deno.test(function addTest() {
-  assertEquals(add(2, 3), 5);
-});
+Effect.runFork(checkForComics);

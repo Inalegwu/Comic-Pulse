@@ -57,8 +57,8 @@ export const checkForComics = Effect.scoped(
 
         yield* Effect.logInfo(`Found ${parsed.length} Issues`);
 
-        yield* Effect.try(
-          () => kv.set([`issues-${date}`], parsed),
+        yield* Effect.tryPromise(
+          async () => await kv.set([`issues-${date}`], parsed),
         );
 
         yield* Effect.log(`Saved ${parsed.length} issues`);
