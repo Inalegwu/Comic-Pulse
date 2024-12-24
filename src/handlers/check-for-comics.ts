@@ -1,9 +1,8 @@
 import { Hash } from "@disgruntleddevs/prelude";
 import { Effect, Option } from "effect";
 import { CheerioClient } from "../cheerio/client.ts";
-import { db } from "../db/index.ts";
-import { issue } from "../db/schema.ts";
 import { Store } from "../resources.ts";
+import { SqlService } from "../sql/client.ts";
 
 const regex = /[\w\s&]+ \#\d+/g;
 
@@ -11,6 +10,7 @@ export const checkForComics = Effect.scoped(
   Effect.gen(function* () {
     const cheerio = yield* CheerioClient;
     const kv = yield* Store;
+    const sql = yield* SqlService;
 
     const page = yield* cheerio.make(
       "https://comixnow.com/category/dc-weekly/",
@@ -55,23 +55,15 @@ export const checkForComics = Effect.scoped(
 
         yield* Effect.logInfo(parsed);
 
-        yield* Effect.forEach(parsed, (parsedIssue) =>
+        yield* Effect.forEach(parsed, (issue) =>
           Effect.gen(function* () {
-            yield* Effect.logInfo(`Saving ${parsedIssue}`);
-
-            yield* Effect.tryPromise(async () => {
-              const saved = await db.insert(issue).values({
-                id: Hash.randomuuid(`issues_${date}`, "-", 15),
-                name: parsedIssue,
-                publishDate: new Date(date),
-                published: false,
-              }).returning();
-
-              console.log({ saved });
+            yield* sql.insert({
+              id: Hash.randomuuid(`issues_${date}`, "-", 15),
+              name: issue,
+              isPublished: false,
+              publishDate: new Date(date),
             });
-          }), {
-          concurrency: "inherit",
-        });
+          }));
 
         if (!kv) {
           yield* Effect.fail(new Error("failed to connect to kv"));
@@ -86,5 +78,42 @@ export const checkForComics = Effect.scoped(
       }), {
       concurrency: "unbounded",
     });
-  }).pipe(Effect.provide(CheerioClient.live)),
-);
+  }).pipe(Effect.provide(CheerioClient.live), Effect.provide(SqlService.live)),
+).pipe(Effect.catchTags({
+  "ConfigError": (e) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(
+        `${e._tag.toUpperCase()} ==> ${e._op}`,
+      );
+    }),
+  "NoSuchElementException": (e) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(
+        `${e._tag.toUpperCase()} ==> ${e.message}`,
+      );
+    }),
+  "ParseError": (e) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(
+        `${e._tag.toUpperCase()} ==> ${e.message}`,
+      );
+    }),
+  "ResultLengthMismatch": (e) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(
+        `${e._tag.toUpperCase()} ==> ${e.message}`,
+      );
+    }),
+  "SqlError": (e) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(
+        `${e._tag.toUpperCase()} ==> ${e.message}`,
+      );
+    }),
+  "UnknownException": (e) =>
+    Effect.gen(function* () {
+      yield* Effect.logError(
+        `${e._tag.toUpperCase()} ==> ${e.message}`,
+      );
+    }),
+}));

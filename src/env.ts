@@ -1,6 +1,6 @@
+import process from "node:process";
 import dotenv from "dotenv";
 import { cleanEnv, str } from "envalid";
-import process from "node:process";
 
 dotenv.config({
   path: ".env",
