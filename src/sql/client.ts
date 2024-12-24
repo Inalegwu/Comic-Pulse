@@ -9,7 +9,7 @@ type ISqlService = Readonly<{
     readonly id: string;
     readonly name: string;
     readonly publishDate: Date;
-    readonly isPublished: boolean;
+    readonly isPublished: number;
   }) => Effect.Effect<
     Issue,
     SqlError.ResultLengthMismatch | SqlError.SqlError | ParseError,
@@ -23,7 +23,7 @@ const SqlLive = Layer.unwrapEffect(
     const config = yield* DatabaseConfig;
 
     return LibsqlClient.layer({
-      url: config.DATBASE_URL,
+      url: config.DATABASE_URL,
       authToken: config.DATABASE_AUTH_TOKEN,
     });
   }),
@@ -33,9 +33,9 @@ class Issue extends Schema.Class<Issue>("Issue")({
   id: Schema.String,
   name: Schema.String,
   publishDate: Schema.Date,
-  isPublished: Schema.Boolean,
-  createdAt: Schema.DateFromSelf,
-  updatedAt: Schema.DateFromSelf,
+  isPublished: Schema.Int,
+  createdAt: Schema.Date,
+  updatedAt: Schema.Date,
 }) {}
 
 const InsertIssueSchema = Issue.pipe(Schema.omit("createdAt", "updatedAt"));
@@ -47,7 +47,7 @@ const make = Effect.gen(function* () {
     Request: InsertIssueSchema,
     Result: Issue,
     execute: (requests) =>
-      sql`INSERT INTO issues ${sql.insert(requests)} RETURNING issues.*`,
+      sql`INSERT INTO issues ${sql.insert(requests)} RETURNING *`,
   });
 
   const insert = InsertIssue.execute;

@@ -50,22 +50,25 @@ export const checkForComics = Effect.scoped(
             .map((v) => v.trim())
             .join("\n")
             .match(/[\w\s&]+ \#\d+/g)
-            ?.map((v) => v.trim()),
+            ?.map((v) => v.trim()).filter((a, i, b) => a !== b[i + 1]),
         );
 
         yield* Effect.logInfo(`Found ${parsed.length} Issues`);
 
         yield* Effect.logInfo(parsed);
 
-        yield* Effect.forEach(parsed, (issue) =>
-          Effect.gen(function* () {
-            yield* sql.insert({
-              id: Hash.randomuuid(`issues_${date}`, "-", 15),
-              name: issue,
-              isPublished: false,
-              publishDate: new Date(date),
-            });
-          }));
+        yield* Effect.forEach(
+          parsed,
+          (issue) =>
+            Effect.gen(function* () {
+              yield* sql.insert({
+                id: Hash.randomuuid(`issues_${date}`, "-", 15),
+                name: issue,
+                isPublished: 0,
+                publishDate: new Date(date),
+              });
+            }),
+        );
 
         if (!kv) {
           yield* Effect.fail(new Error("failed to connect to kv"));
@@ -109,7 +112,7 @@ export const checkForComics = Effect.scoped(
   "SqlError": (e) =>
     Effect.gen(function* () {
       yield* Effect.logError(
-        `${e._tag.toUpperCase()} ==> ${e.message}`,
+        `${e._tag.toUpperCase()} ==> ${e.message}=== CAUSE: ${e.cause}`,
       );
     }),
   "UnknownException": (e) =>
