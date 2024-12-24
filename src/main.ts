@@ -4,7 +4,7 @@ import { notifyRelease } from "./handlers/notify-release.ts";
 
 Deno.cron(
   "Check for new comics",
-  "*/2 * * * *",
+  "0 */2 * * 4",
   () =>
     Effect.runPromise(
       checkForComics,
