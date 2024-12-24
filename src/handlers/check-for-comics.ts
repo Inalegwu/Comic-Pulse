@@ -1,5 +1,8 @@
+import { Hash } from "@disgruntleddevs/prelude";
 import { Effect, Option } from "effect";
 import { CheerioClient } from "../cheerio/client.ts";
+import { db } from "../db/index.ts";
+import { issue } from "../db/schema.ts";
 import { Store } from "../resources.ts";
 
 const regex = /[\w\s&]+ \#\d+/g;
@@ -48,20 +51,40 @@ export const checkForComics = Effect.scoped(
             ?.map((v) => v.trim()),
         );
 
+        yield* Effect.logInfo(`Found ${parsed.length} Issues`);
+
         yield* Effect.logInfo(parsed);
+
+        yield* Effect.forEach(parsed, (parsedIssue) =>
+          Effect.gen(function* () {
+            yield* Effect.logInfo(`Saving ${parsedIssue}`);
+
+            yield* Effect.tryPromise(async () => {
+              const saved = await db.insert(issue).values({
+                id: Hash.randomuuid(`issues_${date}`, "-", 15),
+                name: parsedIssue,
+                publishDate: new Date(date),
+                published: false,
+              }).returning();
+
+              console.log({ saved });
+            });
+          }), {
+          concurrency: "inherit",
+        });
 
         if (!kv) {
           yield* Effect.fail(new Error("failed to connect to kv"));
           return;
         }
 
-        yield* Effect.logInfo(`Found ${parsed.length} Issues`);
-
         yield* Effect.tryPromise(
           async () => await kv.set([`issues-${date}`], parsed),
         );
 
         yield* Effect.log(`Saved ${parsed.length} issues`);
-      }));
+      }), {
+      concurrency: "unbounded",
+    });
   }).pipe(Effect.provide(CheerioClient.live)),
 );
