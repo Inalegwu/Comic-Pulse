@@ -2,7 +2,7 @@ import { SqlClient, type SqlError, SqlResolver } from "@effect/sql";
 import { LibsqlClient } from "@effect/sql-libsql";
 import { Context, Effect, Layer, Schema } from "effect";
 import type { ParseError } from "effect/ParseResult";
-import { DatabaseConfig } from "./config.ts";
+import { DatabaseConfig, TestConfig } from "./config.ts";
 
 type ISqlService = Readonly<{
   insert: (input: {
@@ -21,6 +21,17 @@ type ISqlService = Readonly<{
 const SqlLive = Layer.unwrapEffect(
   Effect.gen(function* () {
     const config = yield* DatabaseConfig;
+
+    return LibsqlClient.layer({
+      url: config.DATABASE_URL,
+      authToken: config.DATABASE_AUTH_TOKEN,
+    });
+  }),
+);
+
+const SqlTestLive = Layer.unwrapEffect(
+  Effect.gen(function* () {
+    const config = yield* TestConfig;
 
     return LibsqlClient.layer({
       url: config.DATABASE_URL,
@@ -72,4 +83,5 @@ export class SqlService extends Context.Tag("sql-service")<
   ISqlService
 >() {
   static live = Layer.effect(this, make).pipe(Layer.provide(SqlLive));
+  static test = Layer.effect(this, make).pipe(Layer.provide(SqlTestLive));
 }

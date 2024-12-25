@@ -29,4 +29,5 @@ export class CheerioClient extends Context.Tag("cheerio-api")<
   ICheerioClient
 >() {
   static live = Layer.effect(this, make);
+  static test = Layer.effect(this, make);
 }
