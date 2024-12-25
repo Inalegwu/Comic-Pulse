@@ -1,8 +1,7 @@
 {
 	"nodeModulesDir": "auto",
 	"tasks": {
-		"start": "deno run --watch main.ts",
-		"dev": "deno run -A src/main_test.ts"
+		"test": "deno run -A src/main_test.ts"
 	},
 	"deploy": {
 		"project": "",
