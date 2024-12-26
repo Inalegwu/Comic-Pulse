@@ -125,7 +125,7 @@ Effect.runFork(
         isPublished: number;
         createdAt: string;
         updatedAt: string;
-      }>`SELECT * FROM issues WHERE name LIKE "BAT%"`;
+      }>`SELECT * FROM issues WHERE name LIKE "%"`;
 
       yield* Effect.forEach(
         issues,
