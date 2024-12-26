@@ -82,7 +82,7 @@ export const checkForComics = Effect.scoped(
           (issue) =>
             Effect.gen(function* () {
               yield* sql.insert({
-                id: Hash.randomuuid(`issues_${date}`, "-", 15),
+                id: Hash.randomuuid(),
                 name: issue,
                 isPublished: 0,
                 publishDate: new Date(date),

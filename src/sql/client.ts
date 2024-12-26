@@ -1,7 +1,6 @@
 import { SqlClient, type SqlError, SqlResolver } from "@effect/sql";
 import { LibsqlClient } from "@effect/sql-libsql";
-import { Context, Effect, Layer, Schema } from "effect";
-import type { ParseError } from "effect/ParseResult";
+import { Context, Effect, Layer, type ParseResult, Schema } from "effect";
 import { DatabaseConfig, TestConfig } from "./config.ts";
 
 type ISqlService = Readonly<{
@@ -12,10 +11,11 @@ type ISqlService = Readonly<{
     readonly isPublished: number;
   }) => Effect.Effect<
     Issue,
-    SqlError.ResultLengthMismatch | SqlError.SqlError | ParseError,
+    SqlError.ResultLengthMismatch | SqlError.SqlError | ParseResult.ParseError,
     never
   >;
   createTable: () => Effect.Effect<void, SqlError.SqlError, never>;
+  sql: SqlClient.SqlClient;
 }>;
 
 const SqlLive = Layer.unwrapEffect(
@@ -75,7 +75,7 @@ const make = Effect.gen(function* () {
       );`;
     });
 
-  return { insert, createTable };
+  return { insert, createTable, sql };
 });
 
 export class SqlService extends Context.Tag("sql-service")<

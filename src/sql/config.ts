@@ -13,8 +13,10 @@ const env = cleanEnv(process.env, {
 });
 
 export const DatabaseConfig = Config.succeed({
-  DATABASE_URL: Deno.env.get("DATABASE_URL"),
-  DATABASE_AUTH_TOKEN: Redacted.make(Deno.env.get("DATABASE_AUTH_TOKEN")),
+  // biome-ignore lint/style/noNonNullAssertion: it'll be there
+  DATABASE_URL: Deno.env.get("DATABASE_URL")!,
+  // biome-ignore lint/style/noNonNullAssertion: it'll be there
+  DATABASE_AUTH_TOKEN: Redacted.make(Deno.env.get("DATABASE_AUTH_TOKEN")!),
 });
 
 export const TestConfig = Config.succeed({
