@@ -19,10 +19,6 @@ export const checkForComics = Effect.scoped(
     // bot as well
     const sql = yield* SqlService;
 
-    // always makes sure the table exists
-    // when spun up so we aren't writing to nothing
-    yield* sql.createTable();
-
     // convert the initial page into a CheerioApi
     // object
     const page = yield* cheerio.make(
