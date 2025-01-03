@@ -68,7 +68,9 @@ export const checkForComics = Effect.scoped(
             .map((v) => v.trim())
             .join("\n")
             .match(/[\w\s&]+ \#\d+/g)
-            ?.map((v) => v.trim()).filter((a, i, b) => a !== b[i + 1]),
+            ?.map((v) => v.trim()).filter((curr, idx, arr) =>
+              curr !== arr[idx + 1]
+            ),
         );
 
         yield* Effect.logInfo(`Found ${parsed.length} Issues`);
@@ -82,7 +84,7 @@ export const checkForComics = Effect.scoped(
           (issue) =>
             Effect.gen(function* () {
               yield* sql.insert({
-                id: Hash.randomuuid(),
+                id: Hash.randomuuid("issues", "_", 10),
                 name: issue,
                 isPublished: 0,
                 publishDate: new Date(date),
