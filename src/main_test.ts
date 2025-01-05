@@ -8,6 +8,7 @@ import { Supabase } from './supabase/client.ts';
 Effect.runFork(
   Effect.scoped(
     Effect.gen(function* () {
+      yield* Effect.logInfo('Running Test Script');
       const config = yield* ScraperConfig;
       const cheerio = yield* CheerioClient;
       const kv = yield* Store;
@@ -63,14 +64,15 @@ Effect.runFork(
             (issue) =>
               Effect.gen(function* () {
                 yield* Effect.logInfo(`Saving ${issue}`);
-                yield* supabase.use(async (client) =>
-                  await client.from('issues').insert({
+                yield* supabase.use(async (client) => {
+                  const { error } = await client.from('issues').insert({
                     id: Hash.randomuuid('issues', '_', 15),
                     issueTitle: issue,
                     isPublished: false,
                     publishDate: new Date(date),
-                  })
-                );
+                  });
+                  if (error) throw new Error(String(error));
+                });
               }),
           );
 
@@ -89,7 +91,7 @@ Effect.runFork(
       });
     }).pipe(Effect.provide(CheerioClient.live), Effect.provide(Supabase.test)),
   ),
-);
+).pipe(Effect.catchTag('supabase-error', Effect.logError));
 
 // test fetching data from the test DB. for me to verify somethings
 // Effect.runFork(
