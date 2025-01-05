@@ -1,7 +1,7 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { Context, Effect, Layer } from "effect";
-import { SupabaseDevConfig, SupabaseLiveConfig } from "./config.ts";
-import { SupabaseError } from "./error.ts";
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { Context, Effect, Layer } from 'effect';
+import { SupabaseDevConfig, SupabaseLiveConfig } from './config.ts';
+import { SupabaseError } from './error.ts';
 
 type ISupabase = Readonly<{
   client: SupabaseClient;
@@ -13,9 +13,10 @@ type ISupabase = Readonly<{
 const make = Effect.gen(function* () {
   const config = yield* SupabaseLiveConfig;
 
-  const client = yield* Effect.succeed(
-    createClient(config.SUPABASE_URL, config.SUPABASE_KEY),
-  );
+  const client = yield* Effect.try({
+    try: () => createClient(config.SUPABASE_URL, config.SUPABASE_KEY),
+    catch: (cause) => new SupabaseError({ cause }),
+  });
 
   const use = <A>(fn: (client: SupabaseClient) => Promise<A>) =>
     Effect.tryPromise({
@@ -31,9 +32,10 @@ const make = Effect.gen(function* () {
 const test = Effect.gen(function* () {
   const config = yield* SupabaseDevConfig;
 
-  const client = yield* Effect.succeed(
-    createClient(config.SUPABASE_URL, config.SUPABASE_KEY),
-  );
+  const client = yield* Effect.try({
+    try: () => createClient(config.SUPABASE_URL, config.SUPABASE_KEY),
+    catch: (cause) => new SupabaseError({ cause }),
+  });
 
   const use = <A>(fn: (client: SupabaseClient) => Promise<A>) =>
     Effect.tryPromise({
@@ -44,7 +46,7 @@ const test = Effect.gen(function* () {
   return { use, client } satisfies ISupabase;
 });
 
-export class Supabase extends Context.Tag("supabase-client")<
+export class Supabase extends Context.Tag('supabase-client')<
   Supabase,
   ISupabase
 >() {

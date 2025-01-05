@@ -1,5 +1,17 @@
 {
 	"nodeModulesDir": "auto",
+	"fmt": {
+		"useTabs": false,
+		"indentWidth": 2,
+		"lineWidth": 80,
+		"semiColons": true,
+		"singleQuote": true
+	},
+	"lint": {
+		"rules": {
+			"tags": ["recommended"]
+		}
+	},
 	"tasks": {
 		"test": "deno run -A src/main_test.ts",
 		"migrate:prod": "deno run -A src/migrate/migrate-prod.ts",

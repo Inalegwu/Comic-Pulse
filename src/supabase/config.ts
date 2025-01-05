@@ -1,10 +1,10 @@
-import dotenv from "dotenv";
-import { Config } from "effect";
-import { cleanEnv, str } from "envalid";
-import process from "node:process";
+import dotenv from 'dotenv';
+import { Config } from 'effect';
+import { cleanEnv, str } from 'envalid';
+import process from 'node:process';
 
 dotenv.config({
-  path: ".env",
+  path: '.env',
 });
 
 const Env = cleanEnv(process.env, {
@@ -14,9 +14,9 @@ const Env = cleanEnv(process.env, {
 
 export const SupabaseLiveConfig = Config.succeed({
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  SUPABASE_URL: Deno.env.get("SUPABASE_URL")!,
+  SUPABASE_URL: Deno.env.get('SUPABASE_URL')!,
   // biome-ignore lint/style/noNonNullAssertion: <explanation>
-  SUPABASE_KEY: Deno.env.get("SUPABASE_KEY")!,
+  SUPABASE_KEY: Deno.env.get('SUPABASE_KEY')!,
 });
 
 export const SupabaseDevConfig = Config.succeed({
