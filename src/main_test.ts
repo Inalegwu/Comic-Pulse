@@ -1,136 +1,105 @@
-import { Effect } from "effect";
-import { SqlService } from "./sql/client.ts";
+import { Hash } from "@disgruntleddevs/prelude";
+import { Effect, Option } from "effect";
+import { CheerioClient } from "./cheerio/client.ts";
+import { ScraperConfig } from "./config.ts";
+import { Store } from "./resources.ts";
+import { Supabase } from "./supabase/client.ts";
 
-// Effect.runFork(
-//   Effect.scoped(
-//     Effect.gen(function* () {
-//       // create a cheerio client for this instance
-//       const cheerio = yield* CheerioClient;
-//       // scoped access to Deno.Kv so some data can be stored
-//       // within the instance
-//       const kv = yield* Store;
-//       // our database connection where all discovered issues
-//       // can be saved into the shared database for the discord
-//       // bot as well
-//       const sql = yield* SqlService;
-
-//       // always makes sure the table exists
-//       // when spun up so we aren't writing to nothing
-//       yield* sql.createTable();
-
-//       // convert the initial page into a CheerioApi
-//       // object
-//       const page = yield* cheerio.make(
-//         "https://comixnow.com/category/dc-weekly/",
-//       );
-
-//       // get all posts in the page based on this specific
-//       // class/identifier
-//       const posts = page("div.tdb_module_loop").find("a");
-
-//       yield* Effect.forEach(posts, (post) =>
-//         Effect.gen(function* () {
-//           const href = yield* Option.fromNullable(page(post).attr("href"));
-//           const title = yield* Option.fromNullable(page(post).text());
-
-//           if (title.split(":").length < 2) return;
-
-//           // since we are doing regex matching we have to ensure
-//           // that the date isn't null
-//           const date = yield* Option.fromNullable(
-//             title.match(/\b((\w{3,9})\s+\d{1,2},\s+\d{4})\b/)?.[0],
-//           );
-
-//           const timestamp = Date.parse(date);
-//           const isNew = Date.now() <= timestamp;
-
-//           // we don't do any extra work in the event of a
-//           // post from an already published week
-//           if (!isNew) {
-//             return;
-//           }
-
-//           yield* Effect.logInfo(`Reading Page ${title}`);
-
-//           // load in the new page and retrieve all elements
-//           // with this specific class since that's where issue
-//           // names are stored
-//           const newPage = yield* cheerio.make(href);
-//           const body = newPage("div.tdb-block-inner").find("p");
-
-//           // get the list of issues from the body
-//           // once again pattern matching
-//           const parsed = yield* Option.fromNullable(
-//             body
-//               .text()
-//               .split("\n")
-//               .map((v) => v.trim())
-//               .join("\n")
-//               .match(/[\w\s&]+ \#\d+/g)
-//               ?.map((v) => v.trim()).filter((a, i, b) => a !== b[i + 1]),
-//           );
-
-//           yield* Effect.logInfo(`Found ${parsed.length} Issues`);
-
-//           yield* Effect.logInfo(parsed);
-
-//           // save each parsed issue into the database
-//           // using our sql module
-//           yield* Effect.forEach(
-//             parsed,
-//             (issue) =>
-//               Effect.gen(function* () {
-//                 yield* sql.insert({
-//                   id: Hash.randomuuid(`issues_${date}`, "-", 15),
-//                   name: issue,
-//                   isPublished: 0,
-//                   publishDate: new Date(date),
-//                 });
-//               }),
-//           );
-
-//           if (!kv) {
-//             yield* Effect.fail(new Error("failed to connect to kv"));
-//             return;
-//           }
-
-//           // also save issues into the KV instance. as a backup.
-//           // still not sure about this though
-//           yield* Effect.tryPromise(
-//             async () => await kv.set([`issues-${date}`], parsed),
-//           );
-
-//           yield* Effect.log(`Saved ${parsed.length} issues`);
-//         }), {
-//         concurrency: "unbounded",
-//       });
-//     }).pipe(
-//       Effect.provide(CheerioClient.test),
-//       Effect.provide(SqlService.test),
-//     ),
-//   ),
-// );
-
-// test fetching data from the test DB. for me to verify somethings
 Effect.runFork(
   Effect.scoped(
     Effect.gen(function* () {
-      yield* Effect.logInfo("Attempting to Retrieve Saved Issues");
-      const sql = yield* SqlService;
+      const config = yield* ScraperConfig;
+      const cheerio = yield* CheerioClient;
+      const kv = yield* Store;
+      const supabase = yield* Supabase;
 
-      const issues = yield* sql.sql<{
-        id: string;
-        name: string;
-        publishDate: string;
-        isPublished: number;
-        createdAt: string;
-        updatedAt: string;
-      }>`SELECT * FROM issues WHERE name LIKE "%"`;
-
-      yield* Effect.forEach(
-        issues,
-        (issue) => Effect.logInfo(issue),
+      const page = yield* cheerio.make(
+        config.SOURCE_URL,
       );
-    }).pipe(Effect.provide(SqlService.test)),
+
+      const posts = page("div.tdb_module_loop").find("a");
+
+      yield* Effect.forEach(posts, (post) =>
+        Effect.gen(function* () {
+          const href = yield* Option.fromNullable(page(post).attr("href"));
+          const title = yield* Option.fromNullable(page(post).text());
+
+          if (title.split(":").length < 2) return;
+
+          const date = yield* Option.fromNullable(
+            title.match(/\b((\w{3,9})\s+\d{1,2},\s+\d{4})\b/)?.[0],
+          );
+
+          const timestamp = Date.parse(date);
+          const isNew = Date.now() <= timestamp;
+
+          if (!isNew) {
+            return;
+          }
+
+          yield* Effect.logInfo(`Reading Page ${title}`);
+
+          const newPage = yield* cheerio.make(href);
+          const body = newPage("div.tdb-block-inner").find("p");
+
+          const parsed = yield* Option.fromNullable(
+            body
+              .text()
+              .split("\n")
+              .map((v) => v.trim())
+              .join("\n")
+              .match(/[\w\s&]+ \#\d+/g)
+              ?.map((v) => v.trim()).filter((curr, idx, arr) =>
+                curr !== arr[idx + 1]
+              ),
+          );
+
+          yield* Effect.logInfo(`Found ${parsed.length} Issues`);
+
+          yield* Effect.logInfo(parsed);
+
+          yield* Effect.forEach(
+            parsed,
+            (issue) =>
+              Effect.gen(function* () {
+                yield* Effect.logInfo(`Saving ${issue}`);
+                yield* supabase.use(async (client) =>
+                  await client.from("issues").insert({
+                    id: Hash.randomuuid("issues", "_", 15),
+                    issueTitle: issue,
+                    isPublished: false,
+                    publishDate: new Date(date),
+                  })
+                );
+              }),
+          );
+
+          if (!kv) {
+            yield* Effect.fail(new Error("failed to connect to kv"));
+            return;
+          }
+
+          yield* Effect.tryPromise(
+            async () => await kv.set([`issues-${date}`], parsed),
+          );
+
+          yield* Effect.log(`Saved ${parsed.length} issues`);
+        }), {
+        concurrency: "unbounded",
+      });
+    }).pipe(Effect.provide(CheerioClient.live), Effect.provide(Supabase.test)),
   ),
 );
+
+// test fetching data from the test DB. for me to verify somethings
+// Effect.runFork(
+//   Effect.scoped(
+//     Effect.gen(function* () {
+//       const supabase = yield* Supabase;
+
+//       yield* supabase.use((client) => {
+//         console.log(client);
+//       });
+//     }).pipe(Effect.provide(Supabase.test)),
+//   ),
+// );

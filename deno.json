@@ -11,9 +11,8 @@
 	},
 	"imports": {
 		"@disgruntleddevs/prelude": "jsr:@disgruntleddevs/prelude@^1.0.7",
-		"@effect/sql": "npm:@effect/sql@^0.25.0",
-		"@effect/sql-libsql": "npm:@effect/sql-libsql@^0.15.0",
 		"@std/assert": "jsr:@std/assert@1",
+		"@supabase/supabase-js": "jsr:@supabase/supabase-js@^2.47.10",
 		"axios": "npm:axios@^1.7.9",
 		"cheerio": "npm:cheerio@^1.0.0",
 		"dotenv": "npm:dotenv@^16.4.7",
