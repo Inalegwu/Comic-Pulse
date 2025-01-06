@@ -13,9 +13,7 @@
 		}
 	},
 	"tasks": {
-		"test": "deno run -A src/main_test.ts",
-		"migrate:prod": "deno run -A src/migrate/migrate-prod.ts",
-		"migrate:dev": "deno run -A src/migrate/migrate-dev.ts"
+		"test": "deno run -A src/test.ts"
 	},
 	"deploy": {
 		"project": "",
