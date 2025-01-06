@@ -39,6 +39,7 @@ Effect.runFork(
           }
 
           yield* Effect.logInfo(`Reading Page ${title}`);
+          yield* Effect.logInfo(date);
 
           const newPage = yield* cheerio.make(href);
           const body = newPage('div.tdb-block-inner').find('p');
@@ -69,7 +70,7 @@ Effect.runFork(
                     id: Hash.randomuuid('issues', '_', 15),
                     issueTitle: issue,
                     isPublished: false,
-                    publishDate: new Date(date),
+                    publishDate: date,
                   });
                   if (error) throw new Error(String(error));
                 });

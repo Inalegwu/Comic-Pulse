@@ -68,7 +68,7 @@ export const checkForComics = Effect.scoped(
                   id: Hash.randomuuid('issues', '_', 15),
                   issueTitle: issue,
                   isPublished: false,
-                  publishDate: new Date(date),
+                  publishDate: date,
                 })
               );
             }),
