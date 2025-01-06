@@ -5,10 +5,6 @@ import { ScraperConfig } from './config.ts';
 import { Store } from './resources.ts';
 import { Supabase } from './supabase/client.ts';
 
-const args = Deno.args;
-
-console.log(args);
-
 Effect.runFork(
   Effect.scoped(
     Effect.gen(function* () {

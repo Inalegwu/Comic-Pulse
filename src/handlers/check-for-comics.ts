@@ -5,8 +5,6 @@ import { ScraperConfig } from '../config.ts';
 import { Store } from '../resources.ts';
 import { Supabase } from '../supabase/client.ts';
 
-// const regex = /[\w\s&]+ \#\d+/g;
-
 export const checkForComics = Effect.scoped(
   Effect.gen(function* () {
     const config = yield* ScraperConfig;
