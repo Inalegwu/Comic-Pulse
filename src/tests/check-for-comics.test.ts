@@ -1,9 +1,8 @@
 import { Hash } from '@disgruntleddevs/prelude';
 import { Effect, Option } from 'effect';
-import { CheerioClient } from './cheerio/client.ts';
-import { ScraperConfig } from './config.ts';
-import { Store } from './resources.ts';
-import { Supabase } from './supabase/client.ts';
+import { CheerioClient } from '../cheerio/client.ts';
+import { ScraperConfig } from '../config.ts';
+import { Supabase } from '../supabase/client.ts';
 
 Effect.runFork(
   Effect.scoped(
@@ -11,7 +10,6 @@ Effect.runFork(
       yield* Effect.logInfo('Running Test Script');
       const config = yield* ScraperConfig;
       const cheerio = yield* CheerioClient;
-      const kv = yield* Store;
       const supabase = yield* Supabase;
 
       const page = yield* cheerio.make(
@@ -72,37 +70,17 @@ Effect.runFork(
                     isPublished: false,
                     publishDate: date,
                   });
-                  if (error) throw new Error(String(error));
+                  if (error) throw new Error(String(error.message));
                 });
               }),
           );
 
-          if (!kv) {
-            yield* Effect.fail(new Error('failed to connect to kv'));
-            return;
-          }
-
-          yield* Effect.tryPromise(
-            async () => await kv.set([`issues-${date}`], parsed),
-          );
-
           yield* Effect.log(`Saved ${parsed.length} issues`);
+
+          return parsed;
         }), {
         concurrency: 'unbounded',
       });
     }).pipe(Effect.provide(CheerioClient.live), Effect.provide(Supabase.test)),
   ),
 ).pipe(Effect.catchTag('supabase-error', Effect.logError));
-
-// test fetching data from the test DB. for me to verify somethings
-// Effect.runFork(
-//   Effect.scoped(
-//     Effect.gen(function* () {
-//       const supabase = yield* Supabase;
-
-//       yield* supabase.use((client) => {
-//         console.log(client);
-//       });
-//     }).pipe(Effect.provide(Supabase.test)),
-//   ),
-// );

@@ -12,6 +12,7 @@
     "npm:@supabase/postgrest-js@1.17.7": "1.17.7",
     "npm:@supabase/realtime-js@2.11.2": "2.11.2",
     "npm:@supabase/storage-js@2.7.1": "2.7.1",
+    "npm:@types/node@*": "22.5.4",
     "npm:axios@^1.7.9": "1.7.9",
     "npm:cheerio@1": "1.0.0",
     "npm:dotenv@^16.4.7": "16.4.7",

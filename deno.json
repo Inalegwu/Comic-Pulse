@@ -13,7 +13,8 @@
 		}
 	},
 	"tasks": {
-		"test": "deno run -A src/test.ts"
+		"test:check-for-comics": "deno run -A src/tests/check-for-comics.test.ts",
+		"test:read-from-db": "deno run -A src/tests/read-from-db.test.ts"
 	},
 	"deploy": {
 		"project": "",

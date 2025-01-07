@@ -2,14 +2,12 @@ import { Hash } from '@disgruntleddevs/prelude';
 import { Effect, Option } from 'effect';
 import { CheerioClient } from '../cheerio/client.ts';
 import { ScraperConfig } from '../config.ts';
-import { Store } from '../resources.ts';
 import { Supabase } from '../supabase/client.ts';
 
 export const checkForComics = Effect.scoped(
   Effect.gen(function* () {
     const config = yield* ScraperConfig;
     const cheerio = yield* CheerioClient;
-    const kv = yield* Store;
     const supabase = yield* Supabase;
 
     const page = yield* cheerio.make(
@@ -72,18 +70,9 @@ export const checkForComics = Effect.scoped(
             }),
         );
 
-        if (!kv) {
-          yield* Effect.fail(new Error('failed to connect to kv'));
-          return;
-        }
-
-        yield* Effect.tryPromise(
-          async () => await kv.set([`issues-${date}`], parsed),
-        );
-
         yield* Effect.log(`Saved ${parsed.length} issues`);
       }), {
       concurrency: 'unbounded',
     });
   }).pipe(Effect.provide(CheerioClient.live), Effect.provide(Supabase.live)),
-);
+).pipe(Effect.catchAll(() => Effect.void));
