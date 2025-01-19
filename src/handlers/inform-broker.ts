@@ -22,9 +22,14 @@ export const informBroker = Effect.scoped(
       },
     );
 
+    if (unpublished === null) return;
+
     yield* Effect.tryPromise(async () =>
       await axios.post(config.BROKER_URL, {
-        issues: unpublished,
+        issues: unpublished.map((issue) => ({
+          id: issue.id,
+          title: issue.issueTitle,
+        })),
       })
     );
   }).pipe(Effect.provide(Supabase.live)),
