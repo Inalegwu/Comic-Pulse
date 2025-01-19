@@ -4,7 +4,7 @@ import { informBroker } from './handlers/inform-broker.ts';
 
 Deno.cron(
   'Check for new comics',
-  '* */2 * * 3',
+  '* */2 * * 4',
   () =>
     Effect.runPromise(
       checkForComics,
@@ -13,6 +13,6 @@ Deno.cron(
 
 Deno.cron(
   'Inform Broker',
-  '* */4 * * 2',
+  '* */4 * * 3',
   () => Effect.runPromise(informBroker),
 );
