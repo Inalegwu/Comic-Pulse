@@ -1,12 +1,12 @@
 import { Hash } from '@disgruntleddevs/prelude';
 import { Effect, Option } from 'effect';
 import { CheerioClient } from '../cheerio/client.ts';
-import { ScraperConfig } from '../config.ts';
+import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
 export const checkForComics = Effect.scoped(
   Effect.gen(function* () {
-    const config = yield* ScraperConfig;
+    const config = yield* AppConfig;
     const cheerio = yield* CheerioClient;
     const supabase = yield* Supabase;
 
@@ -59,14 +59,22 @@ export const checkForComics = Effect.scoped(
           parsed,
           (issue) =>
             Effect.gen(function* () {
-              yield* supabase.use(async (client) =>
+              yield* supabase.use(async (client) => {
+                const { data } = await client.from('issues').select('*').filter(
+                  'issueTitle',
+                  'eq',
+                  issue,
+                );
+
+                if (data?.length !== 0) return;
+
                 await client.from('issues').insert({
                   id: Hash.randomuuid('issues', '_', 15),
                   issueTitle: issue,
                   isPublished: false,
                   publishDate: date,
-                })
-              );
+                });
+              });
             }),
         );
 

@@ -5,7 +5,7 @@ dotenv.config({
   path: '.env',
 });
 
-export const ScraperConfig = Config.succeed({
+export const AppConfig = Config.succeed({
   SOURCE_URL: 'https://comixnow.com/category/dc-weekly/',
   BROKER_URL: '',
 });

@@ -1,17 +1,10 @@
-import { type SupabaseClient, createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { Context, Effect, Layer } from 'effect';
 import type { Database } from '../database.types.ts';
 import { SupabaseDevConfig, SupabaseLiveConfig } from './config.ts';
-import { SupabaseClientInstantiationError, SupabaseError} from './error.ts';
+import { SupabaseClientInstantiationError, SupabaseError } from './error.ts';
 
 type UseFn<A> = (client: SupabaseClient<Database>) => Promise<A>;
-
-type ISupabase = Readonly<{
-  client: SupabaseClient<Database>;
-  use: <A>(
-    fn: UseFn<A>,
-  ) => Effect.Effect<A, SupabaseError, never>;
-}>;
 
 const make = Effect.gen(function* () {
   const config = yield* SupabaseLiveConfig;
@@ -27,11 +20,9 @@ const make = Effect.gen(function* () {
       catch: (cause) => new SupabaseError({ cause }),
     });
 
-  return { use, client } satisfies ISupabase;
+  return { use, client } as const;
 });
 
-// for running in testing environments. uses the local .env
-// instead of deno deploy and deno environment
 const test = Effect.gen(function* () {
   const config = yield* SupabaseDevConfig;
 
@@ -46,12 +37,12 @@ const test = Effect.gen(function* () {
       catch: (cause) => new SupabaseError({ cause }),
     });
 
-  return { use, client } satisfies ISupabase;
+  return { use, client } as const;
 });
 
 export class Supabase extends Context.Tag('supabase-client')<
   Supabase,
-  ISupabase
+  Effect.Effect.Success<typeof make>
 >() {
   static live = Layer.effect(this, make);
   static test = Layer.effect(this, test);

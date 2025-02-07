@@ -1,11 +1,7 @@
-import axios from "axios";
-import * as cheerio from "cheerio";
-import { Context, Effect, Layer } from "effect";
-import { CheerioError } from "./error.ts";
-
-type ICheerioClient = Readonly<{
-  make: (url: string) => Effect.Effect<cheerio.CheerioAPI>;
-}>;
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+import { Context, Effect, Layer } from 'effect';
+import { CheerioError } from './error.ts';
 
 // deno-lint-ignore require-yield
 const make = Effect.gen(function* () {
@@ -21,12 +17,12 @@ const make = Effect.gen(function* () {
 
   return {
     make,
-  } as ICheerioClient;
+  } as const;
 });
 
-export class CheerioClient extends Context.Tag("cheerio-api")<
+export class CheerioClient extends Context.Tag('cheerio-api')<
   CheerioClient,
-  ICheerioClient
+  Effect.Effect.Success<typeof make>
 >() {
   static live = Layer.effect(this, make);
   static test = Layer.effect(this, make);

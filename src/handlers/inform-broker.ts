@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Effect } from 'effect';
-import { ScraperConfig } from '../config.ts';
+import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
 // will inform the 'broker' service to
@@ -8,7 +8,7 @@ import { Supabase } from '../supabase/client.ts';
 export const informBroker = Effect.scoped(
   Effect.gen(function* () {
     const supabase = yield* Supabase;
-    const config = yield* ScraperConfig;
+    const config = yield* AppConfig;
 
     const unpublished = yield* Effect.tryPromise(
       {

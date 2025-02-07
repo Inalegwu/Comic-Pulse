@@ -1,14 +1,14 @@
 import { Hash } from '@disgruntleddevs/prelude';
 import { Effect, Option } from 'effect';
 import { CheerioClient } from '../cheerio/client.ts';
-import { ScraperConfig } from '../config.ts';
+import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
 Effect.runFork(
   Effect.scoped(
     Effect.gen(function* () {
       yield* Effect.logInfo('Running Test Script');
-      const config = yield* ScraperConfig;
+      const config = yield* AppConfig;
       const cheerio = yield* CheerioClient;
       const supabase = yield* Supabase;
 
