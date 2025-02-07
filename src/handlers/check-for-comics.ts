@@ -36,8 +36,8 @@ export const checkForComics = Effect.scoped(
 
         yield* Effect.logInfo(`Reading Page ${title}`);
 
-        const newPage = yield* cheerio.make(href);
-        const body = newPage('div.tdb-block-inner').find('p');
+        const _ = yield* cheerio.make(href);
+        const body = _('div.tdb-block-inner').find('p');
 
         const parsed = yield* Option.fromNullable(
           body
@@ -83,4 +83,9 @@ export const checkForComics = Effect.scoped(
       concurrency: 'unbounded',
     });
   }).pipe(Effect.provide(CheerioClient.live), Effect.provide(Supabase.live)),
-).pipe(Effect.catchAll(() => Effect.void));
+).pipe(
+  Effect.catchAll(() => Effect.void),
+  Effect.annotateLogs({
+    service: 'check-for-comics',
+  }),
+);

@@ -23,7 +23,7 @@ const make = Effect.gen(function* () {
   return { use, client } as const;
 });
 
-const test = Effect.gen(function* () {
+const testMake = Effect.gen(function* () {
   const config = yield* SupabaseDevConfig;
 
   const client = yield* Effect.try({
@@ -45,5 +45,5 @@ export class Supabase extends Context.Tag('supabase-client')<
   Effect.Effect.Success<typeof make>
 >() {
   static live = Layer.effect(this, make);
-  static test = Layer.effect(this, test);
+  static test = Layer.effect(this, testMake);
 }

@@ -3,8 +3,6 @@ import { Effect } from 'effect';
 import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
-// will inform the 'broker' service to
-// run expo-push-notifications
 export const informBroker = Effect.scoped(
   Effect.gen(function* () {
     const supabase = yield* Supabase;
@@ -31,6 +29,13 @@ export const informBroker = Effect.scoped(
           title: issue.issueTitle,
         })),
       })
+    ).pipe(
+      Effect.tap(Effect.logInfo('Informed [pulse-broker] of active releases')),
     );
   }).pipe(Effect.provide(Supabase.live)),
-).pipe(Effect.catchAll(() => Effect.void));
+).pipe(
+  Effect.catchAll(() => Effect.void),
+  Effect.annotateLogs({
+    service: 'inform-broker',
+  }),
+);
