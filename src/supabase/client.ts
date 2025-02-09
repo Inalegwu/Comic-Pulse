@@ -14,11 +14,12 @@ const make = Effect.gen(function* () {
     catch: (cause) => new SupabaseClientInstantiationError({ cause }),
   });
 
-  const use = <A>(fn: UseFn<A>) =>
-    Effect.tryPromise({
+  const use = Effect.fn(function* <A>(fn: UseFn<A>) {
+    yield* Effect.tryPromise({
       try: () => fn(client),
       catch: (cause) => new SupabaseError({ cause }),
-    });
+    }).pipe(Effect.orDie);
+  });
 
   return { use, client } as const;
 });
@@ -31,11 +32,12 @@ const testMake = Effect.gen(function* () {
     catch: (cause) => new SupabaseError({ cause }),
   });
 
-  const use = <A>(fn: (client: SupabaseClient<Database>) => Promise<A>) =>
-    Effect.tryPromise({
+  const use = Effect.fn(function* <A>(fn: UseFn<A>) {
+    yield* Effect.tryPromise({
       try: () => fn(client),
       catch: (cause) => new SupabaseError({ cause }),
-    });
+    }).pipe(Effect.orDie);
+  });
 
   return { use, client } as const;
 });

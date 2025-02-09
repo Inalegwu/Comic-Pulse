@@ -13,6 +13,8 @@ Effect.runFork(
       if (error) throw new Error(String(error.message));
 
       data.map(Console.info);
+
+      return data;
     });
   }).pipe(Effect.provide(Supabase.test), Effect.scoped),
 );
