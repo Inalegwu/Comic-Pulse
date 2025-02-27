@@ -16,5 +16,5 @@ Effect.runFork(
 
       return data;
     });
-  }).pipe(Effect.provide(Supabase.test), Effect.scoped),
+  }).pipe(Effect.provide(Supabase.Default), Effect.scoped),
 );
