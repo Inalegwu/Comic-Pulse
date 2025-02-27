@@ -9,7 +9,6 @@ export const checkForConnectMagazine = Effect.gen(function* () {
 	const cheerio = yield* Cheerio;
 	const supabase = yield* SupabaseService;
 
-	yield* Effect.logInfo("Attempting to check for Magazine");
 	const page = yield* cheerio.make(`${config.SOURCE_URL}/category/dc-connect/`);
 
 	const posts = page("div.tdb_module_loop").find("a");
@@ -17,29 +16,29 @@ export const checkForConnectMagazine = Effect.gen(function* () {
 	yield* Effect.forEach(posts, (post) =>
 		Effect.gen(function* () {
 			const href = yield* Option.fromNullable(page(post).attr("href"));
-			const title = yield* Option.fromNullable(page(post).text());
+			const magazine_name = yield* Option.fromNullable(page(post).text());
+
+			if (magazine_name === "") return;
 
 			const newPage = yield* cheerio.make(href);
 
 			const dwnldButton = newPage("div.tds-button").find("a");
 
-			const magazineLink = dwnldButton.attr("href");
+			const magazine_url = dwnldButton.attr("href");
 
-			if (magazineLink === undefined) return;
+			yield* Effect.logInfo(`found ${magazine_url}`);
+			yield* supabase
+				.use(async (client) => {
+					if (magazine_name === undefined || magazine_name === null) return;
 
-			yield* Effect.logInfo(magazineLink);
-
-			yield* supabase.use(async (client) => {
-				const { data } = await client.from("magazine").select("*");
-
-				if (data?.find((d) => d.magazine_url === magazineLink)) return;
-
-				await client.from("magazine").insert({
-					id: Hash.randomuuid("magazines", "_", 15),
-					magazine_name: title,
-					magazine_url: magazineLink,
-				});
-			});
+					return await client.from("magazine").insert({
+						id: Hash.randomuuid("magazines", "_", 15),
+						magazine_name,
+						magazine_url,
+						created_at: new Date().toISOString(),
+					});
+				})
+				.pipe(Effect.tap(Effect.log));
 		}),
 	);
 }).pipe(
