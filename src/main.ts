@@ -11,6 +11,6 @@ Deno.cron("Inform Broker", "* */4 * * 4", () =>
 	Effect.runPromise(informBroker),
 );
 
-Deno.cron("Fetch Connect Magazine", "0 0 */2 * * ", () =>
+Deno.cron("Fetch Connect Magazine", "0 0 */2 * *", () =>
 	Effect.runPromise(checkForConnectMagazine),
 );
