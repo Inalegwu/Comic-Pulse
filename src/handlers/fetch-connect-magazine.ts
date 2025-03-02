@@ -1,8 +1,8 @@
 import { Hash } from "@disgruntleddevs/prelude";
 import { Console, Effect, Option } from "effect";
-import { Cheerio } from "../cheerio/client.ts";
-import { AppConfig } from "../config.ts";
-import { SupabaseService } from "../supabase/client.ts";
+import { Cheerio } from "../cheerio/client";
+import { AppConfig } from "../config";
+import { SupabaseService } from "../supabase/client";
 
 export const checkForConnectMagazine = Effect.gen(function* () {
 	const config = yield* AppConfig;
@@ -22,11 +22,10 @@ export const checkForConnectMagazine = Effect.gen(function* () {
 
 			const newPage = yield* cheerio.make(href);
 
-			const dwnldButton = newPage("div.tds-button").find("a");
+			const downloadButton = newPage("div.tds-button").find("a");
 
-			const magazine_url = dwnldButton.attr("href");
+			const magazine_url = downloadButton.attr("href");
 
-			yield* Effect.logInfo(`found ${magazine_url}`);
 			yield* supabase
 				.use(async (client) => {
 					if (magazine_name === undefined || magazine_name === null) return;
