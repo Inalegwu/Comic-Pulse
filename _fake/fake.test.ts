@@ -1,1 +1,3 @@
-export function myTest() {}
+export const user={
+    name:"something"
+}

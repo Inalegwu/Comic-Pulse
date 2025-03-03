@@ -24,9 +24,13 @@ class VirtualMachine extends Effect.Service<VirtualMachine>()("@pulse/vm", {
 				module: {},
 			});
 
+			context.exports=context.module.exports;
+
 			yield* Effect.sync(() => vm.runInContext(code, context)).pipe(
 				Effect.orDie,
 			);
+
+			
 
 			return context as Ctx;
 		});
@@ -45,6 +49,9 @@ const testRunner = Effect.gen(function* () {
 				entryPoints: ["_fake/fake.test.ts"],
 				outdir: ".temp/build",
 				format: "cjs",
+				platform:"node",
+				target:"esnext",
+				keepNames:true
 			}),
 	);
 
