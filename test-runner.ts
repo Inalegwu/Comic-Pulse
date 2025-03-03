@@ -70,6 +70,8 @@ const testRunner = Effect.gen(function* () {
 	}).pipe(Effect.andThen((ctxs)=>Effect.gen(function*(){
 		const exports=ctxs.map((ctx)=>ctx.module.exports).map((record)=>Object.keys(record).map((key)=>record[key])).flatMap((tests)=>tests.map((test)=>test));
 
+		// TODO: detect naming collisions among tests and report
+
 		yield* Effect.forEach(exports,(test)=>Effect.gen(function*(){
 			yield* test.resolveFn.pipe(
 				Effect.catchAll(Effect.logFatal),
@@ -78,8 +80,11 @@ const testRunner = Effect.gen(function* () {
 					meta:test.meta||""
 				})
 			);
-		}));
-		
+		}),{
+			concurrency:"inherit",
+			discard:true
+		});
+
 	})));
 }).pipe(
 	Effect.provide(VirtualMachine.Default),
