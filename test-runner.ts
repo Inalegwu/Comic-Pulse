@@ -2,7 +2,8 @@ import { Effect } from "effect";
 import * as esbuild from "esbuild";
 import { glob } from "glob";
 import * as fs from "node:fs";
-import Module from "node:module";
+import { Module } from 'node:module';
+import path from 'node:path';
 import vm from "node:vm";
 
 type Ctx = {
@@ -21,10 +22,8 @@ class VirtualMachine extends Effect.Service<VirtualMachine>()("@pulse/vm", {
 
 		
 			const context = vm.createContext({
-				// ...globalThis,
-				require: Module.createRequire(import.meta.filename!),
-				// __dirname:import.meta.dirname,
-				// __filename:import.meta.filename,
+				...globalThis,
+				require:Module.createRequire(path.resolve(import.meta.dirname!,filePath)),
 				module: {},
 			});
 
@@ -47,20 +46,30 @@ const testRunner = Effect.gen(function* () {
 	yield* Effect.tryPromise(
 		async () =>
 			await esbuild.build({
-				// entryPoints: ["src/**/*.ts"],
-				entryPoints:["_fake/**/*.ts"],
+				entryPoints: ["src/**/*.ts"],
+				// entryPoints:["_fake/**/*.ts"],
 				outdir: ".temp/build",
 				format: "cjs",
 				platform:"node",
 				target:"esnext",
 				keepNames:true,
-				absWorkingDir:import.meta.dirname
+				absWorkingDir:import.meta.dirname,
+				outExtension:{
+					".js":".js",
+				},
+				loader:{
+					".ts":"ts",
+				},
+				sourcemap:false,
+				resolveExtensions:[".js"]
 			}),
-	)
+	);
+
+	yield* Effect.try(()=>fixImports(".temp/build/"))
 
 	const files = yield* Effect.tryPromise(
 		async () =>
-			await glob(".temp/build/**/*.js", {
+			await glob(".temp/build/tests/**/*.js", {
 				ignore: "node_modules/**",
 			}),
 	);
@@ -91,3 +100,18 @@ const testRunner = Effect.gen(function* () {
 );
 
 Effect.runPromise(testRunner);
+
+const fixImports=(dir:string)=>{
+fs.readdirSync(dir).forEach((file)=>{
+			const fullPath=path.join(dir,file);
+
+			if(fs.statSync(fullPath).isDirectory()){
+				fixImports(fullPath)
+			}else if(file.endsWith(".js")){
+				let content=fs.readFileSync(fullPath,"utf-8");
+				content=content.replace(/\.ts(["'])/g,".js$1")
+				fs.writeFileSync(fullPath,content)
+			}
+
+		})
+}
