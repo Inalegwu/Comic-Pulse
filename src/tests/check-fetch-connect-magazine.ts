@@ -1,53 +1,52 @@
-import { Hash } from "@disgruntleddevs/prelude";
-import { Effect, Option } from "effect";
-import { Cheerio } from "../cheerio/client.ts";
-import { AppConfig } from "../config.ts";
-import { Supabase } from "../supabase/client.ts";
+import { Hash } from '@disgruntleddevs/prelude';
+import { Effect, Option } from 'effect';
+import { Cheerio } from '../cheerio/client.ts';
+import { AppConfig } from '../config.ts';
+import { Supabase } from '../supabase/client.ts';
 
 export const testCheckForConnect = Effect.gen(function* () {
-	const config = yield* AppConfig;
-	const cheerio = yield* Cheerio;
-	const supabase = yield* Supabase;
+  const config = yield* AppConfig;
+  const cheerio = yield* Cheerio;
+  const supabase = yield* Supabase;
 
-	yield* Effect.logInfo("Attempting to check for Magazine");
-	const page = yield* cheerio.make(`${config.SOURCE_URL}/category/dc-connect/`);
+  yield* Effect.logInfo('Attempting to check for Magazine');
+  const page = yield* cheerio.make(`${config.SOURCE_URL}/category/dc-connect/`);
 
-	const posts = page("div.tdb_module_loop").find("a");
+  const posts = page('div.tdb_module_loop').find('a');
 
-	yield* Effect.forEach(posts, (post) =>
-		Effect.gen(function* () {
-			const href = yield* Option.fromNullable(page(post).attr("href"));
-			const magazine_name = yield* Option.fromNullable(page(post).text());
+  yield* Effect.forEach(posts, (post) =>
+    Effect.gen(function* () {
+      const href = yield* Option.fromNullable(page(post).attr('href'));
+      const magazine_name = yield* Option.fromNullable(page(post).text());
 
-			if (magazine_name === "") return;
+      if (magazine_name === '') return;
 
-			const newPage = yield* cheerio.make(href);
+      const newPage = yield* cheerio.make(href);
 
-			const dwnldButton = newPage("div.tds-button").find("a");
+      const dwnldButton = newPage('div.tds-button').find('a');
 
-			const magazine_url = dwnldButton.attr("href");
+      const magazine_url = dwnldButton.attr('href');
 
-			if (magazine_url === undefined) return;
+      if (magazine_url === undefined) return;
 
-			yield* Effect.logInfo(`found ${magazine_url}`);
-			yield* supabase
-				.use(async (client) => {
-					if (magazine_name === undefined || magazine_name === null) return;
-					return await client.from("magazine").insert({
-						id: Hash.randomuuid("magazines", "_", 15),
-						magazine_name,
-						magazine_url,
-						created_at: new Date().toISOString(),
-					});
-				})
-				.pipe(Effect.tap(Effect.log));
-		}),
-	);
+      yield* Effect.logInfo(`found ${magazine_url}`);
+      yield* supabase
+        .use(async (client) => {
+          if (magazine_name === undefined || magazine_name === null) return;
+          return await client.from('magazine').insert({
+            id: Hash.randomuuid('magazines', '_', 15),
+            magazine_name,
+            magazine_url,
+            created_at: new Date().toISOString(),
+          });
+        })
+        .pipe(Effect.tap(Effect.log));
+    }));
 }).pipe(
-	Effect.provide(Cheerio.Default),
-	Effect.provide(Supabase.Default),
-	Effect.catchAll(Effect.logError),
-	Effect.scoped,
+  Effect.provide(Cheerio.Default),
+  Effect.provide(Supabase.Default),
+  Effect.catchAll(Effect.logError),
+  Effect.scoped,
 );
 
 Effect.runFork(testCheckForConnect);

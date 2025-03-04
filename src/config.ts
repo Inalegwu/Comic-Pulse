@@ -1,11 +1,11 @@
-import dotenv from "dotenv";
-import { Config } from "effect";
+import dotenv from 'dotenv';
+import { Config } from 'effect';
 
 dotenv.config({
-	path: ".env",
+  path: '.env',
 });
 
 export const AppConfig = Config.succeed({
-	SOURCE_URL: "https://comixnow.com",
-	BROKER_URL: "",
+  SOURCE_URL: 'https://comixnow.com',
+  BROKER_URL: '',
 });
