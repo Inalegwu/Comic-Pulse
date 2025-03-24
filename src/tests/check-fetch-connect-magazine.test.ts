@@ -4,7 +4,7 @@ import { Cheerio } from '../cheerio/client.ts';
 import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
-export const checkFetchConnect = (()=>({
+export const checkFetchConnect = (() => ({
   name: 'check-fetch-connect',
   resolveFn: Effect.gen(function* () {
     const config = yield* AppConfig;

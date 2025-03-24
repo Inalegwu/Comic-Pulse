@@ -12,15 +12,15 @@ type Ctx = {
   };
 };
 
-type Config={
-  entryPoints:Option.Option<Array<string>>;
-  watch:Option.Option<boolean>;
-}
+type Config = {
+  entryPoints: Option.Option<Array<string>>;
+  watch: Option.Option<boolean>;
+};
 
-const ConfigSchema=Schema.Struct({
-  entrypoints:Schema.Array(Schema.String),
-  watch:Schema.Boolean.pipe(Schema.optional)
-})
+const ConfigSchema = Schema.Struct({
+  entrypoints: Schema.Array(Schema.String),
+  watch: Schema.Boolean.pipe(Schema.optional),
+});
 
 class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
   // deno-lint-ignore require-yield
@@ -51,16 +51,18 @@ class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
   }),
 }) {}
 
-const testRunner =Effect.gen(function* () {
+const testRunner = Effect.gen(function* () {
   const vm = yield* VirtualMachine;
-  
+
   // load config
-  const config=yield* Effect.try(()=>fs.readFileSync("lightray.config.json").toString()).pipe(
-    Effect.map((config)=>JSON.parse(config)),
-    Effect.andThen((configJson)=>Effect.gen(function*(){
-      return yield* Schema.decodeUnknown(ConfigSchema)(configJson)
-    })),
-  )
+  const config = yield* Effect.try(() =>
+    fs.readFileSync('lightray.config.json').toString()
+  ).pipe(
+    Effect.map((config) => JSON.parse(config)),
+    Effect.andThen((configJson) =>
+      Schema.decodeUnknown(ConfigSchema)(configJson)
+    ),
+  );
 
   yield* Effect.tryPromise(
     async () =>
@@ -141,19 +143,20 @@ const testRunner =Effect.gen(function* () {
 
 Effect.runPromise(testRunner);
 
-const fixImports = (dir: string) => Effect.gen(function* () {
-  yield* Effect.logInfo(`Fixing all imports in directory ${dir}`)
+const fixImports = (dir: string) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Fixing all imports in directory ${dir}`);
     const files = yield* Effect.try(() => fs.readdirSync(dir));
 
     yield* Effect.forEach(files, (file) =>
       Effect.gen(function* () {
         const fullPath = path.join(dir, file);
-        yield* Effect.logInfo(`Working on ${fullPath}`)
+        yield* Effect.logInfo(`Working on ${fullPath}`);
 
         if (fs.statSync(fullPath).isDirectory()) {
           fixImports(fullPath);
         } else if (file.endsWith('.js')) {
-          yield* Effect.logInfo("Replacing Imports")
+          yield* Effect.logInfo('Replacing Imports');
           let content = fs.readFileSync(fullPath, 'utf-8');
           content = content.replace(/\.ts(["'])/g, '.js$1');
           fs.writeFileSync(fullPath, content);
@@ -168,4 +171,3 @@ const fixImports = (dir: string) => Effect.gen(function* () {
       Effect.logInfo(`Fixed all imports in ${Duration.format(duration)}`)
     ),
   );
-
