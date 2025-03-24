@@ -1,4 +1,4 @@
-import { Duration, Effect } from 'effect';
+import { Duration, Effect, Option, Schema } from 'effect';
 import * as esbuild from 'esbuild';
 import { glob } from 'glob';
 import * as fs from 'node:fs';
@@ -11,6 +11,16 @@ type Ctx = {
     exports: Record<string, Test>;
   };
 };
+
+type Config={
+  entryPoints:Option.Option<Array<string>>;
+  watch:Option.Option<boolean>;
+}
+
+const ConfigSchema=Schema.Struct({
+  entrypoints:Schema.Array(Schema.String),
+  watch:Schema.Boolean.pipe(Schema.optional)
+})
 
 class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
   // deno-lint-ignore require-yield
@@ -30,6 +40,7 @@ class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
       });
 
       yield* Effect.sync(() => vm.runInContext(code, context)).pipe(
+        Effect.tap(Effect.log),
         Effect.orDie,
       );
 
@@ -40,14 +51,21 @@ class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
   }),
 }) {}
 
-const testRunner = Effect.gen(function* () {
+const testRunner =Effect.gen(function* () {
   const vm = yield* VirtualMachine;
+  
+  // load config
+  const config=yield* Effect.try(()=>fs.readFileSync("lightray.config.json").toString()).pipe(
+    Effect.map((config)=>JSON.parse(config)),
+    Effect.andThen((configJson)=>Effect.gen(function*(){
+      return yield* Schema.decodeUnknown(ConfigSchema)(configJson)
+    })),
+  )
 
   yield* Effect.tryPromise(
     async () =>
       await esbuild.build({
-        entryPoints: ['src/**/*.ts'],
-        // entryPoints: ['_fake/**/*.ts'],
+        entryPoints: config.entrypoints as string[],
         outdir: 'dist',
         format: 'cjs',
         platform: 'node',
@@ -76,8 +94,6 @@ const testRunner = Effect.gen(function* () {
         const exports = ctxs.map((ctx) => ctx.module.exports).map((record) =>
           Object.keys(record).map((key) => record[key])
         ).flatMap((tests) => tests.map((test) => test));
-
-        yield* Effect.logInfo(exports);
 
         // prevent naming collisions
         for (let i = 0; i < exports.length; i++) {
@@ -125,17 +141,19 @@ const testRunner = Effect.gen(function* () {
 
 Effect.runPromise(testRunner);
 
-const fixImports = (dir: string) => {
-  return Effect.gen(function* () {
+const fixImports = (dir: string) => Effect.gen(function* () {
+  yield* Effect.logInfo(`Fixing all imports in directory ${dir}`)
     const files = yield* Effect.try(() => fs.readdirSync(dir));
 
     yield* Effect.forEach(files, (file) =>
       Effect.gen(function* () {
         const fullPath = path.join(dir, file);
+        yield* Effect.logInfo(`Working on ${fullPath}`)
 
         if (fs.statSync(fullPath).isDirectory()) {
           fixImports(fullPath);
         } else if (file.endsWith('.js')) {
+          yield* Effect.logInfo("Replacing Imports")
           let content = fs.readFileSync(fullPath, 'utf-8');
           content = content.replace(/\.ts(["'])/g, '.js$1');
           fs.writeFileSync(fullPath, content);
@@ -150,4 +168,4 @@ const fixImports = (dir: string) => {
       Effect.logInfo(`Fixed all imports in ${Duration.format(duration)}`)
     ),
   );
-};
+

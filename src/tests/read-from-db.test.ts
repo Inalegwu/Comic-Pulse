@@ -1,7 +1,7 @@
 import { Console, Effect } from 'effect';
 import { Supabase } from '../supabase/client.ts';
 
-export const readFromDb = (() => ({
+export const readFromDb = (()=>({
   name: 'read-from-db',
   resolveFn: Effect.gen(function* () {
     const supabase = yield* Supabase;
@@ -18,4 +18,4 @@ export const readFromDb = (() => ({
       return data;
     });
   }).pipe(Effect.provide(Supabase.Default), Effect.scoped),
-} satisfies Test))();
+}))();

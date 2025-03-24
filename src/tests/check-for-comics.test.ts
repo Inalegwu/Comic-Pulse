@@ -4,7 +4,7 @@ import { Cheerio } from '../cheerio/client.ts';
 import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
-export const checkForComics = (() => ({
+export const checkForComics = (()=>({
   name: 'check-for-comics',
   resolveFn: Effect.gen(function* () {
     yield* Effect.logInfo('Running [check-for-comics] Test Script');
@@ -87,4 +87,4 @@ export const checkForComics = (() => ({
     Effect.catchAllCause((cause) => Console.log(cause._tag)),
     Effect.scoped,
   ),
-} satisfies Test))();
+}))();

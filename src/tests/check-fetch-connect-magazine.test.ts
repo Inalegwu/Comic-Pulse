@@ -4,8 +4,8 @@ import { Cheerio } from '../cheerio/client.ts';
 import { AppConfig } from '../config.ts';
 import { Supabase } from '../supabase/client.ts';
 
-export const checkFetchConnect = (() => ({
-  name: 'Check Fetch Connect',
+export const checkFetchConnect = (()=>({
+  name: 'check-fetch-connect',
   resolveFn: Effect.gen(function* () {
     const config = yield* AppConfig;
     const cheerio = yield* Cheerio;
@@ -52,4 +52,4 @@ export const checkFetchConnect = (() => ({
     Effect.catchAll(Effect.logError),
     Effect.scoped,
   ),
-} satisfies Test))();
+}))();

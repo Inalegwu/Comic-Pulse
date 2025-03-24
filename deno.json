@@ -16,7 +16,7 @@
     "test:check-for-comics": "deno run -A src/tests/check-for-comics.test.ts",
     "test:read-from-db": "deno run -A src/tests/read-from-db.test.ts",
     "test:fetch-connect-mag": "deno run -A src/tests/check-fetch-connect-magazine.ts",
-    "test:runner": "deno run -A test-runner.ts"
+    "test:runner": "deno run -A lightray.ts"
   },
   "deploy": {
     "project": "",
