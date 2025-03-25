@@ -18,4 +18,4 @@ export const readFromDb = (() => ({
       return data;
     });
   }).pipe(Effect.provide(Supabase.Default), Effect.scoped),
-}))();
+} satisfies Test))();

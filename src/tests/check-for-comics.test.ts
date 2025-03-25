@@ -87,4 +87,4 @@ export const checkForComics = (() => ({
     Effect.catchAllCause((cause) => Console.log(cause._tag)),
     Effect.scoped,
   ),
-}))();
+} satisfies Test))();

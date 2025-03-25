@@ -1,4 +1,4 @@
-import { Duration, Effect, Option, Schema } from 'effect';
+import { Duration, Effect, Schema } from 'effect';
 import * as esbuild from 'esbuild';
 import { glob } from 'glob';
 import * as fs from 'node:fs';
@@ -12,17 +12,14 @@ type Ctx = {
   };
 };
 
-type Config = {
-  entryPoints: Option.Option<Array<string>>;
-  watch: Option.Option<boolean>;
-};
-
 const ConfigSchema = Schema.Struct({
   entrypoints: Schema.Array(Schema.String),
   watch: Schema.Boolean.pipe(Schema.optional),
 });
 
-class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
+type Config=typeof ConfigSchema.Type
+
+class VirtualMachine extends Effect.Service<VirtualMachine>()('lightray/vm', {
   // deno-lint-ignore require-yield
   effect: Effect.gen(function* () {
     const execute = Effect.fn(function* (filePath: string) {
@@ -39,6 +36,10 @@ class VirtualMachine extends Effect.Service<VirtualMachine>()('@pulse/vm', {
         module: {},
       });
 
+      // ! it seems that this actually executes the code
+      // ! to extract the exports. this is sub-optimal.
+      // ! have to find a more optimal way of extracting
+      // ! exports from source files.
       yield* Effect.sync(() => vm.runInContext(code, context)).pipe(
         Effect.tap(Effect.log),
         Effect.orDie,
@@ -89,7 +90,7 @@ const testRunner = Effect.gen(function* () {
   );
 
   yield* Effect.forEach(files, vm.execute, {
-    concurrency: 'unbounded',
+    concurrency: files.length || 'unbounded',
   }).pipe(
     Effect.andThen((ctxs) =>
       Effect.gen(function* () {
@@ -145,18 +146,15 @@ Effect.runPromise(testRunner);
 
 const fixImports = (dir: string) =>
   Effect.gen(function* () {
-    yield* Effect.logInfo(`Fixing all imports in directory ${dir}`);
-    const files = yield* Effect.try(() => fs.readdirSync(dir));
+     const files = yield* Effect.try(() => fs.readdirSync(dir));
 
     yield* Effect.forEach(files, (file) =>
       Effect.gen(function* () {
         const fullPath = path.join(dir, file);
-        yield* Effect.logInfo(`Working on ${fullPath}`);
-
+       
         if (fs.statSync(fullPath).isDirectory()) {
           fixImports(fullPath);
         } else if (file.endsWith('.js')) {
-          yield* Effect.logInfo('Replacing Imports');
           let content = fs.readFileSync(fullPath, 'utf-8');
           content = content.replace(/\.ts(["'])/g, '.js$1');
           fs.writeFileSync(fullPath, content);
@@ -168,6 +166,6 @@ const fixImports = (dir: string) =>
     Effect.catchAll(Effect.logFatal),
     Effect.timed,
     Effect.andThen(([duration]) =>
-      Effect.logInfo(`Fixed all imports in ${Duration.format(duration)}`)
+      Effect.logInfo(`Fixed Broken imports in ${Duration.format(duration)}`)
     ),
   );

@@ -52,4 +52,4 @@ export const checkFetchConnect = (() => ({
     Effect.catchAll(Effect.logError),
     Effect.scoped,
   ),
-}))();
+} satisfies Test))();
