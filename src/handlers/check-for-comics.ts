@@ -54,21 +54,19 @@ export const checkForComics = Effect.gen(function* () {
 				yield* Effect.logInfo(parsed);
 
 				yield* Effect.forEach(parsed, (issue) =>
-					Effect.gen(function* () {
-						yield* supabase.use(async (client) => {
-							const { data } = await client
-								.from("issues")
-								.select("*")
-								.filter("issueTitle", "eq", issue);
+					supabase.use(async (client) => {
+						const { data } = await client
+							.from("issues")
+							.select("*")
+							.filter("issueTitle", "eq", issue);
 
-							if (data?.length !== 0) return;
+						if (data?.length !== 0) return;
 
-							await client.from("issues").insert({
-								id: Hash.randomuuid("issues", "_", 15),
-								issueTitle: issue,
-								isPublished: false,
-								publishDate: date,
-							});
+						await client.from("issues").insert({
+							id: Hash.randomuuid("issues", "_", 15),
+							issueTitle: issue,
+							isPublished: false,
+							publishDate: date,
 						});
 					}),
 				);
