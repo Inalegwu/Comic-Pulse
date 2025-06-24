@@ -1,4 +1,4 @@
-import { Console, Effect } from 'effect';
+import { Effect } from 'effect';
 import { Supabase } from '../supabase/client.ts';
 
 Effect.runFork(
@@ -12,7 +12,7 @@ Effect.runFork(
 
       if (error) throw new Error(String(error.message));
 
-      data.map(Console.info);
+      data.map(console.info);
 
       return data;
     });
