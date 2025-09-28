@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from 'effect';
 
 export const Store = Effect.acquireRelease(
   Effect.tryPromise(async () => await Deno.openKv()),

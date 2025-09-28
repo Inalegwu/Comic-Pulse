@@ -1,88 +1,94 @@
-import { Hash } from "@disgruntleddevs/prelude";
-import { Console, Effect, Option } from "effect";
-import { Cheerio } from "../cheerio/client.ts";
-import { AppConfig } from "../config.ts";
-import { Supabase } from "../supabase/client.ts";
+import { Console, Effect, Option } from 'effect';
+import { Cheerio } from '../cheerio/client.ts';
+import { Pocketbase } from '../pocketbase/client.ts';
 
-const testProgram = Effect.gen(function* () {
-	yield* Effect.logInfo("Running [check-for-comics] Test Script");
-	const config = yield* AppConfig;
-	const cheerio = yield* Cheerio;
-	const supabase = yield* Supabase;
+Effect.gen(function* () {
+  yield* Effect.logInfo('Running [check-for-comics] Test Script');
+  const cheerio = yield* Cheerio;
+  const pb = yield* Pocketbase;
 
-	const page = yield* cheerio.make(`${config.SOURCE_URL}/category/dc-weekly/`);
+  const page = yield* cheerio.make(`https://comixnow.com/category/dc-weekly/`);
 
-	const posts = page("div.tdb_module_loop").find("a");
+  const posts = page('div.tdb_module_loop').find('a');
 
-	yield* Effect.forEach(
-		posts,
-		(post) =>
-			Effect.gen(function* () {
-				const href = yield* Option.fromNullable(page(post).attr("href"));
-				const title = yield* Option.fromNullable(page(post).text());
+  yield* Effect.forEach(
+    posts,
+    (post) =>
+      Effect.gen(function* () {
+        const href = yield* Option.fromNullable(page(post).attr('href'));
+        const title = yield* Option.fromNullable(page(post).text());
 
-				if (title.split(":").length < 2) return;
+        if (title.split(':').length < 2) return;
 
-				const date = yield* Option.fromNullable(
-					title.match(/\b((\w{3,9})\s+\d{1,2},\s+\d{4})\b/)?.[0],
-				);
+        const date = yield* Option.fromNullable(
+          title.match(/\b((\w{3,9})\s+\d{1,2},\s+\d{4})\b/)?.[0],
+        );
 
-				const timestamp = Date.parse(date);
-				const isNew = Date.now() <= timestamp;
+        const timestamp = Date.parse(date);
+        const isNew = Date.now() <= timestamp;
 
-				if (!isNew) {
-					return;
-				}
+        if (!isNew) {
+          return;
+        }
 
-				yield* Effect.logInfo(`Reading Page ${title}`);
-				yield* Effect.logInfo(date);
+        yield* Effect.logInfo(`Reading Page ${title}`);
+        yield* Effect.logInfo(date);
 
-				const newPage = yield* cheerio.make(href);
-				const body = newPage("div.tdb-block-inner").find("p");
+        const newPage = yield* cheerio.make(href);
+        const body = newPage('div.tdb-block-inner').find('p');
 
-				const parsed = yield* Option.fromNullable(
-					body
-						.text()
-						.split("\n")
-						.map((v) => v.trim())
-						.join("\n")
-						.match(/[\w\s&]+ \#\d+/g)
-						?.map((v) => v.trim())
-						.filter((curr, idx, arr) => curr !== arr[idx + 1]),
-				);
+        const parsed = yield* Option.fromNullable(
+          body
+            .text()
+            .split('\n')
+            .map((v) => v.trim())
+            .join('\n')
+            .match(/[\w\s&]+ \#\d+/g)
+            ?.map((v) => v.trim())
+            .filter((curr, idx, arr) => curr !== arr[idx + 1]),
+        );
 
-				yield* Effect.logInfo(`Found ${parsed.length} Issues`);
+        yield* Effect.logInfo(`Found ${parsed.length} Issues`);
 
-				yield* Effect.logInfo(parsed);
+        yield* Effect.logInfo(parsed);
 
-				yield* Effect.forEach(parsed, (issue) =>
-					Effect.gen(function* () {
-						yield* Effect.logInfo(`Saving ${issue}`);
-						yield* supabase.use(async (client) => {
-							const { error } = await client.from("issues").insert({
-								id: Hash.randomuuid("issues", "_", 15),
-								issueTitle: issue,
-								isPublished: false,
-								publishDate: date,
-							});
-							if (error) throw new Error(String(error.message));
-						});
-					}),
-				);
+        yield* Effect.forEach(parsed, (issue) =>
+          Effect.gen(function* () {
+            yield* Effect.logInfo(`Saving ${issue}`);
+            yield* pb.use(async (client) => {
+              const all = await client.collection('Issues').getFullList<
+                Issue
+              >();
 
-				yield* Effect.log(`Saved ${parsed.length} issues`);
+              const exists = all.find((saved) => saved.title === issue);
 
-				return parsed;
-			}),
-		{
-			concurrency: "unbounded",
-		},
-	);
+              if (exists) {
+                console.log('Already saved');
+                return;
+              }
+
+              await client.collection('Issues').create({
+                title: issue,
+                isPublished: false,
+                publishDate: date,
+              }).catch((e) => {
+                if (e) throw new Error(String(e));
+              });
+            });
+          }));
+
+        yield* Effect.log(`Saved ${parsed.length} issues`);
+
+        return parsed;
+      }),
+    {
+      concurrency: 'unbounded',
+    },
+  );
 }).pipe(
-	Effect.provide(Cheerio.Default),
-	Effect.provide(Supabase.Default),
-	Effect.catchAllCause((cause) => Console.log(cause._tag)),
-	Effect.scoped,
+  Effect.provide(Cheerio.Default),
+  Effect.provide(Pocketbase.Default),
+  Effect.catchAllCause((cause) => Console.log(cause)),
+  Effect.scoped,
+  Effect.runPromise,
 );
-
-Effect.runFork(testProgram);
